@@ -18,7 +18,7 @@ static class Program
 sealed class MainForm : Form
 {
     const int WH_KEYBOARD_LL = 13, WM_KEYDOWN = 0x100, WM_KEYUP = 0x101, WM_SYSKEYDOWN = 0x104, WM_SYSKEYUP = 0x105;
-    const int VK_CONTROL = 0x11, VK_LCONTROL = 0xA2, VK_RCONTROL = 0xA3, VK_MENU = 0x12, VK_LMENU = 0xA4, VK_RMENU = 0xA5, VK_M = 0x4D, VK_BACK = 8, VK_ESCAPE = 0x1B, VK_Z = 0x5A, VK_OEM_PERIOD = 0xBE;
+    const int VK_CONTROL = 0x11, VK_LCONTROL = 0xA2, VK_RCONTROL = 0xA3, VK_MENU = 0x12, VK_LMENU = 0xA4, VK_RMENU = 0xA5, VK_M = 0x4D, VK_BACK = 8, VK_DELETE = 0x2E, VK_ESCAPE = 0x1B, VK_Z = 0x5A, VK_OEM_PERIOD = 0xBE;
     const int VK_LEFT = 0x25, VK_UP = 0x26, VK_RIGHT = 0x27, VK_DOWN = 0x28;
     const int VK_NUMPAD2 = 0x62, VK_NUMPAD4 = 0x64, VK_NUMPAD6 = 0x66, VK_NUMPAD8 = 0x68, VK_PRIOR = 0x21, VK_NEXT = 0x22;
     const uint LEFTDOWN = 2, LEFTUP = 4, RIGHTDOWN = 8, RIGHTUP = 16;
@@ -52,8 +52,7 @@ sealed class MainForm : Form
             if (key == VK_M && ctrl && alt && down) { BeginInvoke((Action)delegate { SetActive(!active); }); return (IntPtr)1; }
             if (ctrl && alt && down && (key == VK_PRIOR || key == VK_NEXT)) { speed = Math.Max(1, Math.Min(200, speed + (key == VK_PRIOR ? 5 : -5))); return (IntPtr)1; }
             if (!active) return CallNextHookEx(hook, code, msg, data);
-            if (key == VK_BACK && down) { BeginInvoke((Action)delegate { SetActive(false); }); return (IntPtr)1; }
-            if (key == VK_ESCAPE) return (IntPtr)1;
+            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { active = false; BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
             if (!down && key == VK_Z) { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
             if (!down && key == VK_OEM_PERIOD) { mouse_event(RIGHTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(RIGHTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
             if (down)
@@ -69,9 +68,9 @@ sealed class MainForm : Form
                 }
                 if (dx != 0 || dy != 0) { Point p; GetCursorPos(out p); SetCursorPos(p.X + dx, p.Y + dy); return (IntPtr)1; }
                 if (key == VK_Z || key == VK_OEM_PERIOD) return (IntPtr)1;
-                return (IntPtr)1;
+                return CallNextHookEx(hook, code, msg, data);
             }
-            return (IntPtr)1;
+            return CallNextHookEx(hook, code, msg, data);
         }
         return CallNextHookEx(hook, code, msg, data);
     }
