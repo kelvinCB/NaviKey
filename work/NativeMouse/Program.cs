@@ -36,6 +36,7 @@ sealed class MainForm : Form
         toggle = new Button { Left = 18, Top = 220, Width = 190, Height = 32, Text = "Activar modo ratón" }; toggle.Click += delegate { SetActive(!active); };
         state = new Label { Left = 230, Top = 228, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
         Controls.AddRange(new Control[] { title, help, speedLabel, speedBox, speedHelp, toggle, state }); UpdateUi();
+        Shown += delegate { toggle.Focus(); };
         proc = Callback; hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0); if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
         FormClosing += delegate { UnhookWindowsHookEx(hook); };
     }
