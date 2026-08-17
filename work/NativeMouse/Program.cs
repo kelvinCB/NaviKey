@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Media;
 using System.Windows.Forms;
@@ -23,7 +24,7 @@ sealed class MainForm : Form
     const int VK_LEFT = 0x25, VK_UP = 0x26, VK_RIGHT = 0x27, VK_DOWN = 0x28;
     const int VK_NUMPAD1 = 0x61, VK_NUMPAD2 = 0x62, VK_NUMPAD3 = 0x63, VK_NUMPAD4 = 0x64, VK_NUMPAD6 = 0x66, VK_NUMPAD8 = 0x68, VK_PRIOR = 0x21, VK_NEXT = 0x22;
     const uint LEFTDOWN = 2, LEFTUP = 4, RIGHTDOWN = 8, RIGHTUP = 16, MOUSEEVENTF_WHEEL = 0x0800, MOUSEEVENTF_HWHEEL = 0x01000;
-    bool active, ctrl, alt, leftHeld, xHeld; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook;
+    bool active, ctrl, alt, leftHeld, xHeld; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
 
     public MainForm()
     {
@@ -37,12 +38,28 @@ sealed class MainForm : Form
         toggle = new Button { Left = 18, Top = 220, Width = 190, Height = 32, Text = "Activar modo ratón" }; toggle.Click += delegate { SetActive(!active); };
         state = new Label { Left = 230, Top = 228, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
         Controls.AddRange(new Control[] { title, help, speedLabel, speedBox, speedHelp, toggle, state }); UpdateUi();
+        onStream = new MemoryStream(CreateTone(880, 1320, 140)); offStream = new MemoryStream(CreateTone(440, 220, 180));
+        onSound = new SoundPlayer(onStream); offSound = new SoundPlayer(offStream); onSound.Load(); offSound.Load();
         Shown += delegate { toggle.Focus(); };
         proc = Callback; hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0); if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
-        FormClosing += delegate { UnhookWindowsHookEx(hook); };
+        FormClosing += delegate { UnhookWindowsHookEx(hook); onSound.Dispose(); offSound.Dispose(); onStream.Dispose(); offStream.Dispose(); };
     }
     void SetActive(bool value) { if (active == value) { UpdateUi(); return; } active = value; PlayModeSound(value); UpdateUi(); }
-    void PlayModeSound(bool enabled) { (enabled ? SystemSounds.Asterisk : SystemSounds.Beep).Play(); }
+    void PlayModeSound(bool enabled) { (enabled ? onSound : offSound).Play(); }
+    static byte[] CreateTone(int firstFrequency, int secondFrequency, int durationMs)
+    {
+        const int sampleRate = 44100, bits = 16, channels = 1;
+        int samples = sampleRate * durationMs / 1000, dataSize = samples * 2;
+        using (MemoryStream stream = new MemoryStream(44 + dataSize))
+        using (BinaryWriter writer = new BinaryWriter(stream))
+        {
+            writer.Write(new byte[] { 0x52, 0x49, 0x46, 0x46 }); writer.Write(36 + dataSize); writer.Write(new byte[] { 0x57, 0x41, 0x56, 0x45 });
+            writer.Write(new byte[] { 0x66, 0x6D, 0x74, 0x20 }); writer.Write(16); writer.Write((short)1); writer.Write((short)channels); writer.Write(sampleRate); writer.Write(sampleRate * channels * bits / 8); writer.Write((short)(channels * bits / 8)); writer.Write((short)bits);
+            writer.Write(new byte[] { 0x64, 0x61, 0x74, 0x61 }); writer.Write(dataSize);
+            for (int i = 0; i < samples; i++) { double phase = (double)i / samples; int frequency = phase < 0.5 ? firstFrequency : secondFrequency; short sample = (short)(Math.Sin(2 * Math.PI * frequency * i / sampleRate) * 9000); writer.Write(sample); }
+            return stream.ToArray();
+        }
+    }
     void UpdateUi() { state.Text = active ? "● MODO RATÓN ACTIVO" : "○ Teclado normal"; state.ForeColor = active ? Color.ForestGreen : SystemColors.ControlText; toggle.Text = active ? "Desactivar modo ratón" : "Activar modo ratón"; }
     IntPtr Callback(int code, IntPtr msg, IntPtr data)
     {
