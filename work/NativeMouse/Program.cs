@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Media;
 using System.Windows.Forms;
 
 static class Program
@@ -40,7 +41,8 @@ sealed class MainForm : Form
         proc = Callback; hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0); if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
         FormClosing += delegate { UnhookWindowsHookEx(hook); };
     }
-    void SetActive(bool value) { active = value; UpdateUi(); }
+    void SetActive(bool value) { if (active == value) { UpdateUi(); return; } active = value; PlayModeSound(value); UpdateUi(); }
+    void PlayModeSound(bool enabled) { (enabled ? SystemSounds.Asterisk : SystemSounds.Beep).Play(); }
     void UpdateUi() { state.Text = active ? "● MODO RATÓN ACTIVO" : "○ Teclado normal"; state.ForeColor = active ? Color.ForestGreen : SystemColors.ControlText; toggle.Text = active ? "Desactivar modo ratón" : "Activar modo ratón"; }
     IntPtr Callback(int code, IntPtr msg, IntPtr data)
     {
@@ -53,7 +55,7 @@ sealed class MainForm : Form
             if (key == VK_X && ctrl && alt && down) { BeginInvoke((Action)delegate { SetActive(!active); }); return (IntPtr)1; }
             if (ctrl && alt && down && (key == VK_PRIOR || key == VK_NEXT)) { speed = Math.Max(1, Math.Min(200, speed + (key == VK_PRIOR ? 5 : -5))); return (IntPtr)1; }
             if (!active) return CallNextHookEx(hook, code, msg, data);
-            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } active = false; BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
+            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } if (active) { active = false; PlayModeSound(false); } BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
             if (key == VK_X) { xHeld = down ? true : (up ? false : xHeld); return (IntPtr)1; }
             if (down && key == VK_B) { keybd_event((byte)VK_BROWSER_BACK, 0, 0, UIntPtr.Zero); keybd_event((byte)VK_BROWSER_BACK, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); return (IntPtr)1; }
             if (down && key == VK_N) { keybd_event((byte)VK_BROWSER_FORWARD, 0, 0, UIntPtr.Zero); keybd_event((byte)VK_BROWSER_FORWARD, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); return (IntPtr)1; }
