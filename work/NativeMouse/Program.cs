@@ -22,13 +22,13 @@ sealed class MainForm : Form
     const int VK_LEFT = 0x25, VK_UP = 0x26, VK_RIGHT = 0x27, VK_DOWN = 0x28;
     const int VK_NUMPAD2 = 0x62, VK_NUMPAD4 = 0x64, VK_NUMPAD6 = 0x66, VK_NUMPAD8 = 0x68, VK_PRIOR = 0x21, VK_NEXT = 0x22;
     const uint LEFTDOWN = 2, LEFTUP = 4, RIGHTDOWN = 8, RIGHTUP = 16;
-    bool active, ctrl, alt; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook;
+    bool active, ctrl, alt, leftHeld; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook;
 
     public MainForm()
     {
         Text = "Teclado como ratón"; ClientSize = new Size(500, 300); FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
         var title = new Label { Text = "Controla el puntero con el teclado", Left = 18, Top = 16, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
-        var help = new Label { Left = 18, Top = 52, Width = 465, Height = 105, Text = "Ctrl+Alt+X activa/desactiva el modo ratón.\r\n\r\nFlechas o teclado numérico 8/4/6/2 mueven; Z hace clic izquierdo; . hace clic derecho; Retroceso vuelve al teclado normal.\r\n\r\nEl botón también cambia el modo." };
+        var help = new Label { Left = 18, Top = 52, Width = 465, Height = 105, Text = "Ctrl+Alt+X activa/desactiva el modo ratón.\r\n\r\nFlechas o teclado numérico 8/4/6/2 mueven; Z hace clic izquierdo (mantén Z pulsada para arrastrar); . hace clic derecho; Retroceso vuelve al teclado normal.\r\n\r\nEl botón también cambia el modo." };
         var speedLabel = new Label { Left = 18, Top = 170, Width = 155, Text = "Píxeles por pulsación:" };
         var speedBox = new NumericUpDown { Left = 175, Top = 166, Width = 75, Minimum = 1, Maximum = 200, Value = speed, Increment = 1 };
         speedBox.ValueChanged += delegate { speed = (int)speedBox.Value; };
@@ -52,8 +52,9 @@ sealed class MainForm : Form
             if (key == VK_X && ctrl && alt && down) { BeginInvoke((Action)delegate { SetActive(!active); }); return (IntPtr)1; }
             if (ctrl && alt && down && (key == VK_PRIOR || key == VK_NEXT)) { speed = Math.Max(1, Math.Min(200, speed + (key == VK_PRIOR ? 5 : -5))); return (IntPtr)1; }
             if (!active) return CallNextHookEx(hook, code, msg, data);
-            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { active = false; BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
-            if (!down && key == VK_Z) { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
+            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } active = false; BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
+            if (down && key == VK_Z) { if (!leftHeld) { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); leftHeld = true; } return (IntPtr)1; }
+            if (!down && key == VK_Z) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } return (IntPtr)1; }
             if (!down && key == VK_OEM_PERIOD) { mouse_event(RIGHTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(RIGHTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
             if (down)
             {
