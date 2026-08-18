@@ -25,7 +25,7 @@ sealed class MainForm : Form
     const int VK_LEFT = 0x25, VK_UP = 0x26, VK_RIGHT = 0x27, VK_DOWN = 0x28;
     const int VK_NUMPAD1 = 0x61, VK_NUMPAD2 = 0x62, VK_NUMPAD3 = 0x63, VK_NUMPAD4 = 0x64, VK_NUMPAD6 = 0x66, VK_NUMPAD8 = 0x68, VK_PRIOR = 0x21, VK_NEXT = 0x22;
     const uint LEFTDOWN = 2, LEFTUP = 4, RIGHTDOWN = 8, RIGHTUP = 16, MOUSEEVENTF_WHEEL = 0x0800, MOUSEEVENTF_HWHEEL = 0x01000;
-    bool active, ctrl, alt, leftHeld, xHeld; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
+    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state; Button toggle; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
 
     public MainForm()
     {
@@ -51,11 +51,11 @@ sealed class MainForm : Form
     void ReinstallHookAfterResume()
     {
         if (hook != IntPtr.Zero) { UnhookWindowsHookEx(hook); hook = IntPtr.Zero; }
-        ctrl = false; alt = false; if (leftHeld) mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; xHeld = false;
+        ctrl = false; alt = false; if (leftHeld) mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; xHeld = false; ResetMovementState();
         active = false; UpdateUi();
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0);
     }
-    void SetActive(bool value) { if (active == value) { UpdateUi(); return; } active = value; PlayModeSound(value); UpdateUi(); }
+    void SetActive(bool value) { if (active == value) { UpdateUi(); return; } active = value; if (!value) ResetMovementState(); PlayModeSound(value); UpdateUi(); }
     void PlayModeSound(bool enabled) { (enabled ? onSound : offSound).Play(); }
     static byte[] CreateTone(int firstFrequency, int secondFrequency, int durationMs)
     {
@@ -83,27 +83,29 @@ sealed class MainForm : Form
             if (key == VK_X && ctrl && alt && down) { BeginInvoke((Action)delegate { SetActive(!active); }); return (IntPtr)1; }
             if (ctrl && alt && down && (key == VK_PRIOR || key == VK_NEXT)) { speed = Math.Max(1, Math.Min(200, speed + (key == VK_PRIOR ? 5 : -5))); return (IntPtr)1; }
             if (!active) return CallNextHookEx(hook, code, msg, data);
-            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } if (active) { active = false; PlayModeSound(false); } BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
+            if ((key == VK_BACK || key == VK_DELETE || key == VK_ESCAPE) && down) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } if (active) { active = false; ResetMovementState(); PlayModeSound(false); } BeginInvoke((Action)UpdateUi); return (IntPtr)1; }
             if (key == VK_X) { xHeld = down ? true : (up ? false : xHeld); return (IntPtr)1; }
             if (down && key == VK_B) { keybd_event((byte)VK_BROWSER_BACK, 0, 0, UIntPtr.Zero); keybd_event((byte)VK_BROWSER_BACK, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); return (IntPtr)1; }
             if (down && key == VK_N) { keybd_event((byte)VK_BROWSER_FORWARD, 0, 0, UIntPtr.Zero); keybd_event((byte)VK_BROWSER_FORWARD, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); return (IntPtr)1; }
             if (down && (key == VK_Z || key == VK_NUMPAD1)) { if (!leftHeld) { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); leftHeld = true; } return (IntPtr)1; }
             if (!down && (key == VK_Z || key == VK_NUMPAD1)) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } return (IntPtr)1; }
             if (!down && (key == VK_OEM_PERIOD || key == VK_NUMPAD3)) { mouse_event(RIGHTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(RIGHTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
-            if (up && IsMovementKey(key)) { if (key == lastMoveKey) { lastMoveKey = 0; moveRepeat = 0; } return CallNextHookEx(hook, code, msg, data); }
+            if (up && IsMovementKey(key)) { SetMovementKey(key, false); if (key == lastMoveKey) { lastMoveKey = 0; moveRepeat = 0; } return CallNextHookEx(hook, code, msg, data); }
             if (down)
             {
                 if (xHeld && (key == VK_UP || key == VK_NUMPAD8 || key == VK_DOWN || key == VK_NUMPAD2)) { mouse_event(MOUSEEVENTF_WHEEL, 0, 0, (uint)((key == VK_UP || key == VK_NUMPAD8) ? 120 : -120), UIntPtr.Zero); return (IntPtr)1; }
                 if (xHeld && (key == VK_LEFT || key == VK_NUMPAD4 || key == VK_RIGHT || key == VK_NUMPAD6)) { mouse_event(MOUSEEVENTF_HWHEEL, 0, 0, (uint)((key == VK_RIGHT || key == VK_NUMPAD6) ? 120 : -120), UIntPtr.Zero); return (IntPtr)1; }
+                if (IsMovementKey(key)) SetMovementKey(key, true);
                 int dx = 0, dy = 0;
-                if (key == VK_LEFT || key == VK_NUMPAD4 || key == VK_RIGHT || key == VK_NUMPAD6 || key == VK_UP || key == VK_NUMPAD8 || key == VK_DOWN || key == VK_NUMPAD2)
+                if (IsMovementKey(key))
                 {
                     int now = Environment.TickCount;
                     moveRepeat = (key == lastMoveKey && unchecked(now - lastMoveTick) < 350) ? Math.Min(moveRepeat + 1, 5) : 1;
                     lastMoveKey = key; lastMoveTick = now;
                     int baseStep = Math.Max(1, speed / 5), maxStep = Math.Min(200, Math.Max(speed, speed * 4));
                     int step = Math.Min(maxStep, baseStep << Math.Min(moveRepeat - 1, 8));
-                    if (key == VK_LEFT || key == VK_NUMPAD4) dx = -step; else if (key == VK_RIGHT || key == VK_NUMPAD6) dx = step; else if (key == VK_UP || key == VK_NUMPAD8) dy = -step; else if (key == VK_DOWN || key == VK_NUMPAD2) dy = step;
+                    if (moveLeft) dx = -step; else if (moveRight) dx = step;
+                    if (moveUp) dy = -step; else if (moveDown) dy = step;
                 }
                 if (dx != 0 || dy != 0) { Point p; GetCursorPos(out p); SetCursorPos(p.X + dx, p.Y + dy); return (IntPtr)1; }
                 if (key == VK_Z || key == VK_NUMPAD1 || key == VK_OEM_PERIOD || key == VK_NUMPAD3) return (IntPtr)1;
@@ -114,6 +116,14 @@ sealed class MainForm : Form
         return CallNextHookEx(hook, code, msg, data);
     }
     static bool IsMovementKey(int key) { return key == VK_LEFT || key == VK_NUMPAD4 || key == VK_RIGHT || key == VK_NUMPAD6 || key == VK_UP || key == VK_NUMPAD8 || key == VK_DOWN || key == VK_NUMPAD2; }
+    void SetMovementKey(int key, bool pressed)
+    {
+        if (key == VK_LEFT || key == VK_NUMPAD4) moveLeft = pressed;
+        else if (key == VK_RIGHT || key == VK_NUMPAD6) moveRight = pressed;
+        else if (key == VK_UP || key == VK_NUMPAD8) moveUp = pressed;
+        else if (key == VK_DOWN || key == VK_NUMPAD2) moveDown = pressed;
+    }
+    void ResetMovementState() { moveLeft = false; moveRight = false; moveUp = false; moveDown = false; lastMoveKey = 0; moveRepeat = 0; }
     delegate IntPtr HookProc(int code, IntPtr msg, IntPtr data);
     [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetWindowsHookEx(int id, HookProc proc, IntPtr mod, uint thread);
     [DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr hook);
