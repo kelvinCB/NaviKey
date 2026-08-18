@@ -90,6 +90,7 @@ sealed class MainForm : Form
             if (down && (key == VK_Z || key == VK_NUMPAD1)) { if (!leftHeld) { mouse_event(LEFTDOWN, 0, 0, 0, UIntPtr.Zero); leftHeld = true; } return (IntPtr)1; }
             if (!down && (key == VK_Z || key == VK_NUMPAD1)) { if (leftHeld) { mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; } return (IntPtr)1; }
             if (!down && (key == VK_OEM_PERIOD || key == VK_NUMPAD3)) { mouse_event(RIGHTDOWN, 0, 0, 0, UIntPtr.Zero); mouse_event(RIGHTUP, 0, 0, 0, UIntPtr.Zero); return (IntPtr)1; }
+            if (up && IsMovementKey(key)) { if (key == lastMoveKey) { lastMoveKey = 0; moveRepeat = 0; } return CallNextHookEx(hook, code, msg, data); }
             if (down)
             {
                 if (xHeld && (key == VK_UP || key == VK_NUMPAD8 || key == VK_DOWN || key == VK_NUMPAD2)) { mouse_event(MOUSEEVENTF_WHEEL, 0, 0, (uint)((key == VK_UP || key == VK_NUMPAD8) ? 120 : -120), UIntPtr.Zero); return (IntPtr)1; }
@@ -100,7 +101,8 @@ sealed class MainForm : Form
                     int now = Environment.TickCount;
                     moveRepeat = (key == lastMoveKey && unchecked(now - lastMoveTick) < 350) ? Math.Min(moveRepeat + 1, 5) : 1;
                     lastMoveKey = key; lastMoveTick = now;
-                    int step = Math.Min(speed, 10 * moveRepeat);
+                    int baseStep = Math.Max(1, speed / 5), maxStep = Math.Min(200, Math.Max(speed, speed * 4));
+                    int step = Math.Min(maxStep, baseStep << Math.Min(moveRepeat - 1, 8));
                     if (key == VK_LEFT || key == VK_NUMPAD4) dx = -step; else if (key == VK_RIGHT || key == VK_NUMPAD6) dx = step; else if (key == VK_UP || key == VK_NUMPAD8) dy = -step; else if (key == VK_DOWN || key == VK_NUMPAD2) dy = step;
                 }
                 if (dx != 0 || dy != 0) { Point p; GetCursorPos(out p); SetCursorPos(p.X + dx, p.Y + dy); return (IntPtr)1; }
@@ -111,6 +113,7 @@ sealed class MainForm : Form
         }
         return CallNextHookEx(hook, code, msg, data);
     }
+    static bool IsMovementKey(int key) { return key == VK_LEFT || key == VK_NUMPAD4 || key == VK_RIGHT || key == VK_NUMPAD6 || key == VK_UP || key == VK_NUMPAD8 || key == VK_DOWN || key == VK_NUMPAD2; }
     delegate IntPtr HookProc(int code, IntPtr msg, IntPtr data);
     [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetWindowsHookEx(int id, HookProc proc, IntPtr mod, uint thread);
     [DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr hook);
