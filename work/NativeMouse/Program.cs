@@ -44,6 +44,12 @@ sealed class MainForm : Form
         BackColor = Background;
         ForeColor = Color.White;
         Font = new Font("Segoe UI", 9F);
+        try
+        {
+            var applicationIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            if (applicationIcon != null) Icon = applicationIcon;
+        }
+        catch (ArgumentException) { }
 
         var rail = new Panel { Dock = DockStyle.Left, Width = 214, BackColor = Rail, Padding = new Padding(22, 24, 18, 20) };
         var brand = new Label { Text = "TECLADO\r\nCOMO RATÓN", Left = 22, Top = 24, Width = 170, Height = 50, ForeColor = Color.White, Font = new Font("Segoe UI", 12F, FontStyle.Bold), BackColor = Color.Transparent };

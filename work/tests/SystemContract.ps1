@@ -3,6 +3,7 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $programPath = Join-Path $root 'NativeMouse\Program.cs'
 $audioPath = Join-Path $root 'NativeMouse\ModeAudio.cs'
 $manifestPath = Join-Path $root 'NativeMouse\TecladoComoRaton.manifest'
+$iconPath = Join-Path $root '..\outputs\assets\TecladoComoRaton-C.ico'
 $program = Get-Content -LiteralPath $programPath -Raw
 $audio = Get-Content -LiteralPath $audioPath -Raw
 $manifest = Get-Content -LiteralPath $manifestPath -Raw
@@ -44,6 +45,7 @@ foreach ($token in @('CreateTone', 'PlaySync', 'SystemSounds.Asterisk', 'SystemS
 }
 
 Assert-Contains $manifest 'requestedExecutionLevel level="requireAdministrator"' 'Manifest must request administrator execution.'
+if (-not (Test-Path -LiteralPath $iconPath)) { throw "Logo C icon missing: $iconPath" }
 
 $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { $csc = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe' }
@@ -52,7 +54,7 @@ New-Item -ItemType Directory -Path $tempRoot | Out-Null
 $exePath = Join-Path $tempRoot 'TecladoComoRatonNative.exe'
 $manifestCopy = Join-Path $tempRoot 'TecladoComoRaton.manifest'
 Copy-Item -LiteralPath $manifestPath -Destination $manifestCopy
-& $csc /nologo /target:winexe /optimize+ /out:$exePath /win32manifest:$manifestCopy /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Configuration.dll $programPath $audioPath
+& $csc /nologo /target:winexe /optimize+ /out:$exePath /win32manifest:$manifestCopy /win32icon:$iconPath /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Configuration.dll $programPath $audioPath
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $exePath)) { throw 'Native application build contract failed.' }
 
 $installedPath = Join-Path $env:LOCALAPPDATA 'TecladoComoRaton\native\TecladoComoRatonNative.exe'
