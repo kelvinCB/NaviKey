@@ -3,6 +3,8 @@ $tests = @(
     (Join-Path $PSScriptRoot 'UiDesignContract.ps1'),
     (Join-Path $PSScriptRoot 'ModeAudioTests.ps1'),
     (Join-Path $PSScriptRoot 'LogoAssetTests.ps1'),
+    (Join-Path $PSScriptRoot 'AppearanceThemeTests.ps1'),
+    (Join-Path $PSScriptRoot 'AppearanceThemeBehaviorTests.ps1'),
     (Join-Path $PSScriptRoot 'SystemContract.ps1')
 )
 foreach ($test in $tests) {
