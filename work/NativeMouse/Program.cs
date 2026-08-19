@@ -33,7 +33,7 @@ sealed class MainForm : Form
     static readonly Color TextMuted = Color.FromArgb(169, 194, 211);
     static readonly Color Green = Color.FromArgb(83, 210, 125);
     static readonly Color Red = Color.FromArgb(244, 123, 107);
-    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout; Panel statusDot; NumericUpDown speedBox; Button toggle; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
+    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown, soundsEnabled = true; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout, pageHeading, pageDescription; Panel statusDot, sectionOverlay; NumericUpDown speedBox; Button toggle; Button[] navButtons; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
 
     public MainForm()
     {
@@ -53,18 +53,22 @@ sealed class MainForm : Form
         var navTitle = new Label { Text = "ESPACIO DE CONTROL", Left = 22, Top = 124, Width = 170, ForeColor = TextMuted, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
         rail.Controls.AddRange(new Control[] { brand, brandLine, navTitle });
         string[] navItems = { "Centro", "Velocidad", "Controles", "Apariencia", "Accesibilidad", "Acerca de" };
+        navButtons = new Button[navItems.Length];
         for (int i = 0; i < navItems.Length; i++)
         {
             var nav = CreateNavButton(navItems[i], 158 + i * 42, i == 0);
+            int sectionIndex = i;
+            nav.Click += delegate { ShowSection(sectionIndex); };
+            navButtons[i] = nav;
             rail.Controls.Add(nav);
         }
         var railFooter = new Label { Text = "NATIVE WINDOWS\r\nCONTROL v1.0", Left = 22, Top = 610, Width = 170, Height = 34, ForeColor = TextMuted, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
         rail.Controls.Add(railFooter);
 
         var content = new Panel { Dock = DockStyle.Fill, BackColor = Background, Padding = new Padding(32, 26, 32, 24), AutoScroll = false };
-        var heading = new Label { Text = "Control del puntero", Left = 32, Top = 26, Width = 620, Height = 38, ForeColor = Color.White, Font = new Font("Segoe UI", 24F, FontStyle.Bold) };
-        var headingHelp = new Label { Text = "Un centro de control claro para moverte, hacer clic y desplazarte sin tocar el mouse.", Left = 34, Top = 68, Width = 700, Height = 24, ForeColor = TextMuted, Font = new Font("Segoe UI", 10F) };
-        content.Controls.AddRange(new Control[] { heading, headingHelp });
+        pageHeading = new Label { Text = "Control del puntero", Left = 32, Top = 26, Width = 620, Height = 38, ForeColor = Color.White, Font = new Font("Segoe UI", 24F, FontStyle.Bold) };
+        pageDescription = new Label { Text = "Un centro de control claro para moverte, hacer clic y desplazarte sin tocar el mouse.", Left = 34, Top = 68, Width = 700, Height = 24, ForeColor = TextMuted, Font = new Font("Segoe UI", 10F) };
+        content.Controls.AddRange(new Control[] { pageHeading, pageDescription });
 
         var hero = CreateSurface(Surface, 32, 108, 702, 128);
         statusDot = new Panel { Left = 22, Top = 23, Width = 10, Height = 10, BackColor = Red };
@@ -112,6 +116,8 @@ sealed class MainForm : Form
         footer.Controls.Add(footerText);
         content.Controls.Add(footer);
 
+        sectionOverlay = new Panel { Left = 32, Top = 108, Width = 702, Height = 610, BackColor = Background, Visible = false };
+        content.Controls.Add(sectionOverlay);
         Controls.Add(content);
         Controls.Add(rail);
         UpdateUi();
@@ -142,6 +148,138 @@ sealed class MainForm : Form
         panel.Controls.AddRange(new Control[] { keyLabel, actionLabel });
         return panel;
     }
+    Label CreatePageLabel(string text, int left, int top, int width, int height, float size, FontStyle style, Color color)
+    {
+        return new Label { Text = text, Left = left, Top = top, Width = width, Height = height, ForeColor = color, Font = new Font("Segoe UI", size, style) };
+    }
+    void ShowSection(int index)
+    {
+        if (navButtons == null || sectionOverlay == null) return;
+        for (int i = 0; i < navButtons.Length; i++)
+        {
+            navButtons[i].BackColor = i == index ? Color.FromArgb(14, 53, 84) : Rail;
+            navButtons[i].ForeColor = i == index ? Color.White : TextMuted;
+        }
+        sectionOverlay.Controls.Clear();
+        if (index == 0)
+        {
+            pageHeading.Text = "Control del puntero";
+            pageDescription.Text = "Un centro de control claro para moverte, hacer clic y desplazarte sin tocar el mouse.";
+            sectionOverlay.Visible = false;
+            return;
+        }
+        sectionOverlay.Visible = true;
+        sectionOverlay.BringToFront();
+        if (index == 1)
+        {
+            pageHeading.Text = "Velocidad";
+            pageDescription.Text = "Ajusta el ritmo del puntero y prueba el paso que mejor se adapta a tu pantalla.";
+            BuildVelocitySection();
+        }
+        else if (index == 2)
+        {
+            pageHeading.Text = "Controles";
+            pageDescription.Text = "Consulta cada tecla y activa el modo ratón desde este mismo espacio.";
+            BuildControlsSection();
+        }
+        else if (index == 3)
+        {
+            pageHeading.Text = "Apariencia";
+            pageDescription.Text = "Una interfaz de alto contraste, pensada para leerla de un vistazo.";
+            BuildAppearanceSection();
+        }
+        else if (index == 4)
+        {
+            pageHeading.Text = "Accesibilidad";
+            pageDescription.Text = "Ajustes para que el cambio de modo sea evidente y predecible.";
+            BuildAccessibilitySection();
+        }
+        else
+        {
+            pageHeading.Text = "Acerca de";
+            pageDescription.Text = "Información de esta versión nativa para Windows.";
+            BuildAboutSection();
+        }
+    }
+    void BuildVelocitySection()
+    {
+        var panel = CreateSurface(Surface, 0, 0, 702, 178);
+        panel.Controls.Add(CreatePageLabel("Paso base", 22, 20, 250, 28, 15F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Cada pulsación empieza con este valor y la aceleración progresiva llega hasta el máximo.", 22, 52, 620, 24, 9F, FontStyle.Regular, TextMuted));
+        var input = new NumericUpDown { Left = 22, Top = 92, Width = 112, Height = 34, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 13F) };
+        var valueLabel = CreatePageLabel(speed.ToString() + " px / pulsación", 154, 99, 230, 24, 10F, FontStyle.Bold, Cyan);
+        input.ValueChanged += delegate { speed = (int)input.Value; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
+        var plus = CreatePrimaryButton("Subir 5 px", 410, 88, 112, 38);
+        var minus = new Button { Text = "Bajar 5 px", Left = 534, Top = 88, Width = 112, Height = 38, FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 1, BorderColor = Color.FromArgb(85, 132, 157) }, BackColor = SurfaceRaised, ForeColor = Color.White, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+        plus.Click += delegate { speed = Math.Min(200, speed + 5); input.Value = speed; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
+        minus.Click += delegate { speed = Math.Max(1, speed - 5); input.Value = speed; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
+        panel.Controls.AddRange(new Control[] { input, valueLabel, plus, minus });
+        sectionOverlay.Controls.Add(panel);
+        var hint = CreateSurface(Color.FromArgb(7, 28, 49), 0, 198, 702, 96);
+        hint.Controls.Add(CreatePageLabel("Atajo rápido", 20, 18, 150, 20, 9F, FontStyle.Bold, Cyan));
+        hint.Controls.Add(CreatePageLabel("Ctrl+Alt+PageUp sube cinco píxeles. Ctrl+Alt+PageDown baja cinco.", 20, 45, 620, 24, 10F, FontStyle.Regular, Color.White));
+        sectionOverlay.Controls.Add(hint);
+    }
+    void BuildControlsSection()
+    {
+        var move = CreateSurface(Surface, 0, 0, 338, 180);
+        move.Controls.Add(CreatePageLabel("Mover y desplazar", 20, 18, 280, 26, 14F, FontStyle.Bold, Color.White));
+        move.Controls.Add(CreatePageLabel("Flechas / NumPad 8 4 6 2\r\nX + flechas: scroll vertical y horizontal\r\r\nLa diagonal funciona al mantener dos flechas.", 20, 56, 300, 100, 9.5F, FontStyle.Regular, TextMuted));
+        var actions = CreateSurface(Surface, 364, 0, 338, 180);
+        actions.Controls.Add(CreatePageLabel("Clic y navegación", 20, 18, 280, 26, 14F, FontStyle.Bold, Color.White));
+        actions.Controls.Add(CreatePageLabel("Z / NumPad 1: clic izquierdo y arrastre\r\n. / NumPad 3: clic derecho\r\nB: atrás   N: adelante", 20, 56, 300, 100, 9.5F, FontStyle.Regular, TextMuted));
+        sectionOverlay.Controls.AddRange(new Control[] { move, actions });
+        var actionButton = CreatePrimaryButton(active ? "Desactivar modo ratón" : "Activar modo ratón", 0, 208, 240, 48);
+        actionButton.Click += delegate { SetActive(!active); actionButton.Text = active ? "Desactivar modo ratón" : "Activar modo ratón"; };
+        sectionOverlay.Controls.Add(actionButton);
+        sectionOverlay.Controls.Add(CreatePageLabel("Retroceso, Supr o Escape desactivan sin cerrar el programa.", 260, 222, 410, 24, 9.5F, FontStyle.Regular, TextMuted));
+    }
+    void BuildAppearanceSection()
+    {
+        var panel = CreateSurface(Surface, 0, 0, 702, 190);
+        panel.Controls.Add(CreatePageLabel("Tema Command Center", 22, 20, 320, 28, 15F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("La paleta oscura reduce el brillo y mantiene los estados importantes visibles.", 22, 54, 620, 24, 9.5F, FontStyle.Regular, TextMuted));
+        Color[] swatches = { Rail, Surface, SurfaceRaised, Cyan, Green, Red };
+        string[] names = { "Rail", "Superficie", "Elevada", "Acento", "Activo", "Alerta" };
+        for (int i = 0; i < swatches.Length; i++)
+        {
+            var swatch = new Panel { Left = 22 + i * 106, Top = 108, Width = 76, Height = 28, BackColor = swatches[i], BorderStyle = BorderStyle.FixedSingle };
+            panel.Controls.Add(swatch);
+            panel.Controls.Add(CreatePageLabel(names[i], 22 + i * 106, 142, 90, 20, 8F, FontStyle.Regular, TextMuted));
+        }
+        sectionOverlay.Controls.Add(panel);
+        var note = CreateSurface(Color.FromArgb(7, 28, 49), 0, 212, 702, 82);
+        note.Controls.Add(CreatePageLabel("Diseño", 20, 16, 120, 20, 9F, FontStyle.Bold, Cyan));
+        note.Controls.Add(CreatePageLabel("La interfaz usa tipografía Segoe UI, estados por color y botones con foco claro para no depender de iconos.", 20, 42, 640, 24, 9.5F, FontStyle.Regular, Color.White));
+        sectionOverlay.Controls.Add(note);
+    }
+    void BuildAccessibilitySection()
+    {
+        var panel = CreateSurface(Surface, 0, 0, 702, 180);
+        panel.Controls.Add(CreatePageLabel("Ajustes de accesibilidad", 22, 20, 400, 28, 15F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Haz que los cambios de estado sean fáciles de percibir y recuperar.", 22, 54, 620, 22, 9.5F, FontStyle.Regular, TextMuted));
+        var soundBox = new CheckBox { Text = "Sonido al activar y desactivar", Left = 22, Top = 94, Width = 310, Height = 28, Checked = soundsEnabled, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
+        soundBox.CheckedChanged += delegate { soundsEnabled = soundBox.Checked; };
+        var focusBox = new CheckBox { Text = "Mantener visible el puntero al reanudar", Left = 22, Top = 132, Width = 360, Height = 28, Checked = true, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
+        focusBox.CheckedChanged += delegate { if (focusBox.Checked) EnsureCursorVisible(); };
+        panel.Controls.AddRange(new Control[] { soundBox, focusBox });
+        sectionOverlay.Controls.Add(panel);
+        var safe = CreateSurface(Color.FromArgb(7, 28, 49), 0, 202, 702, 92);
+        safe.Controls.Add(CreatePageLabel("Salida segura", 20, 16, 150, 20, 9F, FontStyle.Bold, Cyan));
+        safe.Controls.Add(CreatePageLabel("Retroceso, Supr y Escape siempre vuelven al teclado normal sin cerrar la aplicación.", 20, 43, 640, 24, 9.5F, FontStyle.Regular, Color.White));
+        sectionOverlay.Controls.Add(safe);
+    }
+    void BuildAboutSection()
+    {
+        var panel = CreateSurface(Surface, 0, 0, 702, 190);
+        panel.Controls.Add(CreatePageLabel("Teclado como ratón", 22, 22, 420, 30, 17F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Control nativo para Windows\r\nVersión de producción 1.0\r\nHook de teclado de bajo nivel + eventos de mouse nativos", 22, 66, 620, 82, 10F, FontStyle.Regular, TextMuted));
+        sectionOverlay.Controls.Add(panel);
+        var repo = CreateSurface(Color.FromArgb(7, 28, 49), 0, 212, 702, 82);
+        repo.Controls.Add(CreatePageLabel("Código fuente", 20, 16, 150, 20, 9F, FontStyle.Bold, Cyan));
+        repo.Controls.Add(CreatePageLabel("github.com/kelvinCB/TecladoComoRaton", 20, 42, 640, 24, 10F, FontStyle.Regular, Color.White));
+        sectionOverlay.Controls.Add(repo);
+    }
     void UpdateSpeedReadout() { if (speedReadout != null) speedReadout.Text = speed.ToString() + " px / pulsación"; }
     void PowerModeChanged(object sender, PowerModeChangedEventArgs e) { if (e.Mode == PowerModes.Resume) BeginInvoke((Action)ReinstallHookAfterResume); }
     void SessionSwitch(object sender, SessionSwitchEventArgs e) { if (e.Reason == SessionSwitchReason.SessionUnlock) BeginInvoke((Action)ReinstallHookAfterResume); }
@@ -153,7 +291,7 @@ sealed class MainForm : Form
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0);
     }
     void SetActive(bool value) { if (active == value) { if (value) EnsureCursorVisible(); UpdateUi(); return; } active = value; if (value) EnsureCursorVisible(); else ResetMovementState(); PlayModeSound(value); UpdateUi(); }
-    void PlayModeSound(bool enabled) { (enabled ? onSound : offSound).Play(); }
+    void PlayModeSound(bool enabled) { if (soundsEnabled) (enabled ? onSound : offSound).Play(); }
     static byte[] CreateTone(int firstFrequency, int secondFrequency, int durationMs)
     {
         const int sampleRate = 44100, bits = 16, channels = 1;

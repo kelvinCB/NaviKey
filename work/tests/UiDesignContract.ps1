@@ -6,7 +6,11 @@ $requiredTokens = @(
     'Color.FromArgb(4, 14, 30)',
     'Centro',
     'Velocidad del puntero',
-    'Accesos rápidos de teclado'
+    'Accesos rápidos de teclado',
+    'ShowSection',
+    'Ajustes de accesibilidad',
+    'sectionOverlay',
+    'navButtons'
 )
 
 foreach ($token in $requiredTokens) {
