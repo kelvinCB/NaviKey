@@ -45,14 +45,18 @@ try {
     $setTheme = $formType.GetMethod('SetTheme', $flags)
     $showSection = $formType.GetMethod('ShowSection', $flags)
     $themeNames = @('CommandCenter', 'Aurora', 'HighContrast', 'Claro')
-    foreach ($themeName in $themeNames) {
-        $palette = $paletteType.GetField($themeName, $flags).GetValue($null)
-        $setTheme.Invoke($form, @($palette)) | Out-Null
-        for ($section = 0; $section -le 5; $section++) {
-            $showSection.Invoke($form, @($section)) | Out-Null
-            foreach ($control in (Get-TextControls $form)) {
-                $ratio = Get-ContrastRatio $control.ForeColor (Get-EffectiveBackColor $control)
-                if ($ratio -lt 3.0) { throw "Unreadable text in theme '$themeName', section $section, control '$($control.Text.Trim())': contrast $([Math]::Round($ratio, 2))." }
+    foreach ($fromName in $themeNames) {
+        $fromPalette = $paletteType.GetField($fromName, $flags).GetValue($null)
+        $setTheme.Invoke($form, @($fromPalette)) | Out-Null
+        foreach ($themeName in $themeNames) {
+            $palette = $paletteType.GetField($themeName, $flags).GetValue($null)
+            $setTheme.Invoke($form, @($palette)) | Out-Null
+            for ($section = 0; $section -le 5; $section++) {
+                $showSection.Invoke($form, @($section)) | Out-Null
+                foreach ($control in (Get-TextControls $form)) {
+                    $ratio = Get-ContrastRatio $control.ForeColor (Get-EffectiveBackColor $control)
+                    if ($ratio -lt 3.0) { $background = Get-EffectiveBackColor $control; throw "Unreadable text in transition '$fromName' -> '$themeName', section $section, control '$($control.Text.Trim())': contrast $([Math]::Round($ratio, 2)), foreground $($control.ForeColor.ToArgb()), background $($background.ToArgb())." }
+                }
             }
         }
     }

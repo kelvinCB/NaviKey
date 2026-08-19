@@ -345,11 +345,20 @@ sealed class MainForm : Form
     }
     void ApplyThemeToControl(Control control, ThemePalette previous, ThemePalette next)
     {
-        control.BackColor = MapThemeColor(control.BackColor, previous, next);
         control.ForeColor = MapThemeColor(control.ForeColor, previous, next);
+        if (control is Label) control.BackColor = Color.Transparent;
+        else control.BackColor = MapThemeColor(control.BackColor, previous, next);
         Button button = control as Button;
         if (button != null) button.FlatAppearance.BorderColor = MapThemeColor(button.FlatAppearance.BorderColor, previous, next);
         foreach (Control child in control.Controls) ApplyThemeToControl(child, previous, next);
+        NumericUpDown numeric = control as NumericUpDown;
+        if (numeric != null)
+        {
+            numeric.BackColor = next.SurfaceRaised;
+            foreach (Control child in numeric.Controls) child.BackColor = next.SurfaceRaised;
+            numeric.ForeColor = next.TextPrimary;
+            foreach (Control child in numeric.Controls) child.ForeColor = next.TextPrimary;
+        }
     }
     Color MapThemeColor(Color value, ThemePalette previous, ThemePalette next)
     {
