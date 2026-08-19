@@ -1,4 +1,4 @@
-# Teclado como ratón
+# NaviKey
 
 ## Platform
 

@@ -65,7 +65,7 @@ sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "Teclado como ratón";
+        Text = "NaviKey";
         ClientSize = new Size(980, 700);
         MinimumSize = new Size(980, 700);
         StartPosition = FormStartPosition.CenterScreen;
@@ -82,7 +82,7 @@ sealed class MainForm : Form
         catch (ArgumentException) { }
 
         var rail = new Panel { Dock = DockStyle.Left, Width = 214, BackColor = Rail, Padding = new Padding(22, 24, 18, 20) };
-        var brand = new Label { Text = "TECLADO\r\nCOMO RATÓN", Left = 22, Top = 24, Width = 170, Height = 50, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 12F, FontStyle.Bold), BackColor = Color.Transparent };
+        var brand = new Label { Text = "NAVIKEY", Left = 22, Top = 24, Width = 170, Height = 50, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 12F, FontStyle.Bold), BackColor = Color.Transparent };
         var brandLine = new Panel { Left = 22, Top = 92, Width = 36, Height = 3, BackColor = Cyan };
         var navTitle = new Label { Text = "ESPACIO DE CONTROL", Left = 22, Top = 124, Width = 170, ForeColor = TextMuted, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
         rail.Controls.AddRange(new Control[] { brand, brandLine, navTitle });
@@ -311,12 +311,12 @@ sealed class MainForm : Form
     void BuildAboutSection()
     {
         var panel = CreateSurface(Surface, 0, 0, 702, 190);
-        panel.Controls.Add(CreatePageLabel("Teclado como ratón", 22, 22, 420, 30, 17F, FontStyle.Bold, theme.TextPrimary));
+        panel.Controls.Add(CreatePageLabel("NaviKey", 22, 22, 420, 30, 17F, FontStyle.Bold, theme.TextPrimary));
         panel.Controls.Add(CreatePageLabel("Control nativo para Windows\r\nVersión de producción 1.0\r\nHook de teclado de bajo nivel + eventos de mouse nativos", 22, 66, 620, 82, 10F, FontStyle.Regular, TextMuted));
         sectionOverlay.Controls.Add(panel);
         var repo = CreateSurface(Footer, 0, 212, 702, 82);
         repo.Controls.Add(CreatePageLabel("Código fuente", 20, 16, 150, 20, 9F, FontStyle.Bold, Cyan));
-        repo.Controls.Add(CreatePageLabel("github.com/kelvinCB/TecladoComoRaton", 20, 42, 640, 24, 10F, FontStyle.Regular, theme.TextPrimary));
+        repo.Controls.Add(CreatePageLabel("github.com/kelvinCB/NaviKey", 20, 42, 640, 24, 10F, FontStyle.Regular, theme.TextPrimary));
         sectionOverlay.Controls.Add(repo);
     }
     void SetTheme(ThemePalette palette)

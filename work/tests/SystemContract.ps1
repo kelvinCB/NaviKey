@@ -2,8 +2,8 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $programPath = Join-Path $root 'NativeMouse\Program.cs'
 $audioPath = Join-Path $root 'NativeMouse\ModeAudio.cs'
-$manifestPath = Join-Path $root 'NativeMouse\TecladoComoRaton.manifest'
-$iconPath = Join-Path $root '..\outputs\assets\TecladoComoRaton-C.ico'
+$manifestPath = Join-Path $root 'NativeMouse\NaviKey.manifest'
+$iconPath = Join-Path $root '..\outputs\assets\NaviKey-C.ico'
 $program = Get-Content -LiteralPath $programPath -Raw
 $audio = Get-Content -LiteralPath $audioPath -Raw
 $manifest = Get-Content -LiteralPath $manifestPath -Raw
@@ -51,15 +51,15 @@ $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { $csc = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('teclado-como-raton-build-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
-$exePath = Join-Path $tempRoot 'TecladoComoRatonNative.exe'
-$manifestCopy = Join-Path $tempRoot 'TecladoComoRaton.manifest'
+$exePath = Join-Path $tempRoot 'NaviKey.exe'
+$manifestCopy = Join-Path $tempRoot 'NaviKey.manifest'
 Copy-Item -LiteralPath $manifestPath -Destination $manifestCopy
 & $csc /nologo /target:winexe /optimize+ /out:$exePath /win32manifest:$manifestCopy /win32icon:$iconPath /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Configuration.dll $programPath $audioPath
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $exePath)) { throw 'Native application build contract failed.' }
 
-$installedPath = Join-Path $env:LOCALAPPDATA 'TecladoComoRaton\native\TecladoComoRatonNative.exe'
+$installedPath = Join-Path $env:LOCALAPPDATA 'NaviKey\native\NaviKey.exe'
 if (-not (Test-Path $installedPath)) { throw "Installed executable missing: $installedPath" }
-$instances = @(Get-Process TecladoComoRatonNative -ErrorAction SilentlyContinue)
+$instances = @(Get-Process NaviKey -ErrorAction SilentlyContinue)
 if ($instances.Count -ne 1) { throw "Expected one running instance, found $($instances.Count)." }
 
 Write-Output 'System contract tests passed'

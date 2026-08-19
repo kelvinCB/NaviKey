@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-$installedPath = Join-Path $env:LOCALAPPDATA 'TecladoComoRaton\native\TecladoComoRatonNative.exe'
+$installedPath = Join-Path $env:LOCALAPPDATA 'NaviKey\native\NaviKey.exe'
 if (-not (Test-Path -LiteralPath $installedPath)) { throw "Installed executable missing: $installedPath" }
 
 function Get-EffectiveBackColor($control) {

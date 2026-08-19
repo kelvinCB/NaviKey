@@ -1,4 +1,4 @@
-# Teclado como ratón
+# NaviKey
 
 Aplicación ligera para Windows que permite controlar el puntero con el teclado.
 
