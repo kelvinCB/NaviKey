@@ -58,6 +58,6 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path $exePath)) { throw 'Native applicati
 $installedPath = Join-Path $env:LOCALAPPDATA 'TecladoComoRaton\native\TecladoComoRatonNative.exe'
 if (-not (Test-Path $installedPath)) { throw "Installed executable missing: $installedPath" }
 $instances = @(Get-Process TecladoComoRatonNative -ErrorAction SilentlyContinue)
-if ($instances.Count -gt 1) { throw "Expected one running instance, found $($instances.Count)." }
+if ($instances.Count -ne 1) { throw "Expected one running instance, found $($instances.Count)." }
 
 Write-Output 'System contract tests passed'
