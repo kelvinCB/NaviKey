@@ -52,10 +52,10 @@ sealed class MainForm : Form
     {
         if (hook != IntPtr.Zero) { UnhookWindowsHookEx(hook); hook = IntPtr.Zero; }
         ctrl = false; alt = false; if (leftHeld) mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; xHeld = false; ResetMovementState();
-        active = false; UpdateUi();
+        active = false; EnsureCursorVisible(); UpdateUi();
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0);
     }
-    void SetActive(bool value) { if (active == value) { UpdateUi(); return; } active = value; if (!value) ResetMovementState(); PlayModeSound(value); UpdateUi(); }
+    void SetActive(bool value) { if (active == value) { if (value) EnsureCursorVisible(); UpdateUi(); return; } active = value; if (value) EnsureCursorVisible(); else ResetMovementState(); PlayModeSound(value); UpdateUi(); }
     void PlayModeSound(bool enabled) { (enabled ? onSound : offSound).Play(); }
     static byte[] CreateTone(int firstFrequency, int secondFrequency, int durationMs)
     {
@@ -124,12 +124,24 @@ sealed class MainForm : Form
         else if (key == VK_DOWN || key == VK_NUMPAD2) moveDown = pressed;
     }
     void ResetMovementState() { moveLeft = false; moveRight = false; moveUp = false; moveDown = false; lastMoveKey = 0; moveRepeat = 0; }
+    void EnsureCursorVisible()
+    {
+        CURSORINFO info = new CURSORINFO(); info.cbSize = Marshal.SizeOf(typeof(CURSORINFO));
+        if (GetCursorInfo(ref info) && (info.flags & CURSOR_SHOWING) == 0)
+        {
+            for (int i = 0; i < 16 && ShowCursor(true) < 0; i++) { }
+        }
+    }
     delegate IntPtr HookProc(int code, IntPtr msg, IntPtr data);
     [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetWindowsHookEx(int id, HookProc proc, IntPtr mod, uint thread);
     [DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr hook);
     [DllImport("user32.dll")] static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr msg, IntPtr data);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out Point p);
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    const int CURSOR_SHOWING = 0x00000001;
+    [StructLayout(LayoutKind.Sequential)] struct CURSORINFO { public int cbSize; public int flags; public IntPtr hCursor; public Point ptScreenPos; }
+    [DllImport("user32.dll")] static extern bool GetCursorInfo(ref CURSORINFO info);
+    [DllImport("user32.dll")] static extern int ShowCursor(bool show);
     const uint KEYEVENTF_KEYUP = 0x0002;
     [DllImport("user32.dll")] static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
     [DllImport("user32.dll")] static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
