@@ -20,4 +20,17 @@ foreach ($token in $requiredTokens) {
     }
 }
 
+function Get-PanelTop([string] $variableName) {
+    $match = [Regex]::Match($source, "var $variableName = CreateSurface\(Surface,\s*\d+,\s*(\d+),")
+    if (-not $match.Success) { throw "UI layout contract missing panel: $variableName" }
+    return [int]$match.Groups[1].Value
+}
+
+$quickTop = Get-PanelTop 'quickPanel'
+$speedTop = Get-PanelTop 'speedPanel'
+$curveTop = Get-PanelTop 'curvePanel'
+if ($quickTop -ge $speedTop -or $quickTop -ge $curveTop) {
+    throw "Keyboard shortcuts panel must be above pointer speed and progressive acceleration panels."
+}
+
 Write-Output 'UI design contract passed'

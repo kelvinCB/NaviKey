@@ -114,7 +114,16 @@ sealed class MainForm : Form
         hero.Controls.AddRange(new Control[] { statusDot, statusLabel, state, modeHint, toggle });
         content.Controls.Add(hero);
 
-        var speedPanel = CreateSurface(Surface, 32, 254, 338, 172);
+        var quickPanel = CreateSurface(Surface, 32, 254, 702, 148);
+        var quickTitle = new Label { Text = "Accesos rápidos de teclado", Left = 20, Top = 17, Width = 360, Height = 26, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
+        quickPanel.Controls.Add(quickTitle);
+        quickPanel.Controls.Add(CreateShortcutCard("FLECHAS", "Mover el puntero", 20, 57, 145));
+        quickPanel.Controls.Add(CreateShortcutCard("X + FLECHA", "Scroll vertical u horizontal", 180, 57, 185));
+        quickPanel.Controls.Add(CreateShortcutCard("Z / .", "Clic izquierdo / derecho", 380, 57, 150));
+        quickPanel.Controls.Add(CreateShortcutCard("B / N", "Atrás / adelante", 545, 57, 135));
+        content.Controls.Add(quickPanel);
+
+        var speedPanel = CreateSurface(Surface, 32, 424, 338, 172);
         var speedTitle = new Label { Text = "Velocidad del puntero", Left = 20, Top = 18, Width = 280, Height = 28, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
         var speedHelp = new Label { Text = "Ajusta el paso base por pulsación.", Left = 20, Top = 49, Width = 280, Height = 20, ForeColor = TextMuted };
         speedBox = new NumericUpDown { Left = 20, Top = 82, Width = 100, Height = 32, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = theme.TextPrimary, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 12F) };
@@ -124,7 +133,7 @@ sealed class MainForm : Form
         speedPanel.Controls.AddRange(new Control[] { speedTitle, speedHelp, speedBox, speedReadout, speedKeys });
         content.Controls.Add(speedPanel);
 
-        var curvePanel = CreateSurface(Surface, 390, 254, 344, 172);
+        var curvePanel = CreateSurface(Surface, 390, 424, 344, 172);
         var curveTitle = new Label { Text = "Aceleración progresiva", Left = 20, Top = 18, Width = 290, Height = 28, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
         var curveHelp = new Label { Text = "Mantén una flecha para ganar velocidad.", Left = 20, Top = 49, Width = 295, Height = 20, ForeColor = TextMuted };
         var curveBase = new Panel { Left = 20, Top = 134, Width = 300, Height = 1, BackColor = Color.FromArgb(72, 111, 137) };
@@ -136,16 +145,7 @@ sealed class MainForm : Form
         curvePanel.Controls.AddRange(new Control[] { curveTitle, curveHelp, curveBase, curve1, curve2, curve3, curve4, curve5 });
         content.Controls.Add(curvePanel);
 
-        var quickPanel = CreateSurface(Surface, 32, 444, 702, 148);
-        var quickTitle = new Label { Text = "Accesos rápidos de teclado", Left = 20, Top = 17, Width = 360, Height = 26, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
-        quickPanel.Controls.Add(quickTitle);
-        quickPanel.Controls.Add(CreateShortcutCard("FLECHAS", "Mover el puntero", 20, 57, 145));
-        quickPanel.Controls.Add(CreateShortcutCard("X + FLECHA", "Scroll vertical u horizontal", 180, 57, 185));
-        quickPanel.Controls.Add(CreateShortcutCard("Z / .", "Clic izquierdo / derecho", 380, 57, 150));
-        quickPanel.Controls.Add(CreateShortcutCard("B / N", "Atrás / adelante", 545, 57, 135));
-        content.Controls.Add(quickPanel);
-
-        var footer = CreateSurface(Footer, 32, 610, 702, 42);
+        var footer = CreateSurface(Footer, 32, 618, 702, 42);
         var footerText = new Label { Text = "Ctrl+Alt+X activa o desactiva el modo. Retroceso, Supr o Escape vuelven al teclado normal.", Left = 18, Top = 12, Width = 660, Height = 20, ForeColor = TextMuted, Font = new Font("Segoe UI", 8.5F) };
         footer.Controls.Add(footerText);
         content.Controls.Add(footer);
