@@ -1,10 +1,8 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
-using System.Media;
 using System.Windows.Forms;
 
 static class Program
@@ -33,7 +31,7 @@ sealed class MainForm : Form
     static readonly Color TextMuted = Color.FromArgb(169, 194, 211);
     static readonly Color Green = Color.FromArgb(83, 210, 125);
     static readonly Color Red = Color.FromArgb(244, 123, 107);
-    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown, soundsEnabled = true, ensureCursorOnResume = true; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout, pageHeading, pageDescription; Panel statusDot, sectionOverlay; NumericUpDown speedBox; Button toggle; Button[] navButtons; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
+    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown, soundsEnabled = true, ensureCursorOnResume = true; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout, pageHeading, pageDescription; Panel statusDot, sectionOverlay; NumericUpDown speedBox; Button toggle; Button[] navButtons; HookProc proc; IntPtr hook; ModeAudio modeAudio;
 
     public MainForm()
     {
@@ -121,12 +119,11 @@ sealed class MainForm : Form
         Controls.Add(content);
         Controls.Add(rail);
         UpdateUi();
-        onStream = new MemoryStream(CreateTone(880, 1320, 140)); offStream = new MemoryStream(CreateTone(440, 220, 180));
-        onSound = new SoundPlayer(onStream); offSound = new SoundPlayer(offStream); onSound.Load(); offSound.Load();
+        modeAudio = new ModeAudio();
         Shown += delegate { toggle.Focus(); };
         proc = Callback; hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0); if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
         SystemEvents.PowerModeChanged += PowerModeChanged; SystemEvents.SessionSwitch += SessionSwitch;
-        FormClosing += delegate { SystemEvents.PowerModeChanged -= PowerModeChanged; SystemEvents.SessionSwitch -= SessionSwitch; UnhookWindowsHookEx(hook); onSound.Dispose(); offSound.Dispose(); onStream.Dispose(); offStream.Dispose(); };
+        FormClosing += delegate { SystemEvents.PowerModeChanged -= PowerModeChanged; SystemEvents.SessionSwitch -= SessionSwitch; UnhookWindowsHookEx(hook); modeAudio.Dispose(); };
     }
     Panel CreateSurface(Color color, int left, int top, int width, int height)
     {
@@ -291,20 +288,15 @@ sealed class MainForm : Form
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0);
     }
     void SetActive(bool value) { if (active == value) { if (value) EnsureCursorVisible(); UpdateUi(); return; } active = value; if (value) EnsureCursorVisible(); else ResetMovementState(); PlayModeSound(value); UpdateUi(); }
-    void PlayModeSound(bool enabled) { if (soundsEnabled) (enabled ? onSound : offSound).Play(); }
-    static byte[] CreateTone(int firstFrequency, int secondFrequency, int durationMs)
+    void PlayModeSound(bool enabled)
     {
-        const int sampleRate = 44100, bits = 16, channels = 1;
-        int samples = sampleRate * durationMs / 1000, dataSize = samples * 2;
-        using (MemoryStream stream = new MemoryStream(44 + dataSize))
-        using (BinaryWriter writer = new BinaryWriter(stream))
+        if (!soundsEnabled || modeAudio == null) return;
+        Action play = delegate { modeAudio.Enabled = soundsEnabled; modeAudio.Play(enabled); };
+        if (IsHandleCreated && InvokeRequired)
         {
-            writer.Write(new byte[] { 0x52, 0x49, 0x46, 0x46 }); writer.Write(36 + dataSize); writer.Write(new byte[] { 0x57, 0x41, 0x56, 0x45 });
-            writer.Write(new byte[] { 0x66, 0x6D, 0x74, 0x20 }); writer.Write(16); writer.Write((short)1); writer.Write((short)channels); writer.Write(sampleRate); writer.Write(sampleRate * channels * bits / 8); writer.Write((short)(channels * bits / 8)); writer.Write((short)bits);
-            writer.Write(new byte[] { 0x64, 0x61, 0x74, 0x61 }); writer.Write(dataSize);
-            for (int i = 0; i < samples; i++) { double phase = (double)i / samples; int frequency = phase < 0.5 ? firstFrequency : secondFrequency; short sample = (short)(Math.Sin(2 * Math.PI * frequency * i / sampleRate) * 9000); writer.Write(sample); }
-            return stream.ToArray();
+            try { BeginInvoke(play); } catch (InvalidOperationException) { }
         }
+        else play();
     }
     void UpdateUi()
     {
