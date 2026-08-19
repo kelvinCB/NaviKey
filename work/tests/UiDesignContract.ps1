@@ -10,7 +10,8 @@ $requiredTokens = @(
     'ShowSection',
     'Ajustes de accesibilidad',
     'sectionOverlay',
-    'navButtons'
+    'navButtons',
+    'ensureCursorOnResume'
 )
 
 foreach ($token in $requiredTokens) {

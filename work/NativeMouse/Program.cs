@@ -33,7 +33,7 @@ sealed class MainForm : Form
     static readonly Color TextMuted = Color.FromArgb(169, 194, 211);
     static readonly Color Green = Color.FromArgb(83, 210, 125);
     static readonly Color Red = Color.FromArgb(244, 123, 107);
-    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown, soundsEnabled = true; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout, pageHeading, pageDescription; Panel statusDot, sectionOverlay; NumericUpDown speedBox; Button toggle; Button[] navButtons; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
+    bool active, ctrl, alt, leftHeld, xHeld, moveLeft, moveRight, moveUp, moveDown, soundsEnabled = true, ensureCursorOnResume = true; int speed = 50, lastMoveKey = 0, moveRepeat = 0, lastMoveTick; Label state, modeHint, speedReadout, pageHeading, pageDescription; Panel statusDot, sectionOverlay; NumericUpDown speedBox; Button toggle; Button[] navButtons; HookProc proc; IntPtr hook; SoundPlayer onSound, offSound; MemoryStream onStream, offStream;
 
     public MainForm()
     {
@@ -260,8 +260,8 @@ sealed class MainForm : Form
         panel.Controls.Add(CreatePageLabel("Haz que los cambios de estado sean fáciles de percibir y recuperar.", 22, 54, 620, 22, 9.5F, FontStyle.Regular, TextMuted));
         var soundBox = new CheckBox { Text = "Sonido al activar y desactivar", Left = 22, Top = 94, Width = 310, Height = 28, Checked = soundsEnabled, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
         soundBox.CheckedChanged += delegate { soundsEnabled = soundBox.Checked; };
-        var focusBox = new CheckBox { Text = "Mantener visible el puntero al reanudar", Left = 22, Top = 132, Width = 360, Height = 28, Checked = true, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
-        focusBox.CheckedChanged += delegate { if (focusBox.Checked) EnsureCursorVisible(); };
+        var focusBox = new CheckBox { Text = "Mantener visible el puntero al reanudar", Left = 22, Top = 132, Width = 360, Height = 28, Checked = ensureCursorOnResume, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
+        focusBox.CheckedChanged += delegate { ensureCursorOnResume = focusBox.Checked; if (focusBox.Checked) EnsureCursorVisible(); };
         panel.Controls.AddRange(new Control[] { soundBox, focusBox });
         sectionOverlay.Controls.Add(panel);
         var safe = CreateSurface(Color.FromArgb(7, 28, 49), 0, 202, 702, 92);
@@ -287,7 +287,7 @@ sealed class MainForm : Form
     {
         if (hook != IntPtr.Zero) { UnhookWindowsHookEx(hook); hook = IntPtr.Zero; }
         ctrl = false; alt = false; if (leftHeld) mouse_event(LEFTUP, 0, 0, 0, UIntPtr.Zero); leftHeld = false; xHeld = false; ResetMovementState();
-        active = false; EnsureCursorVisible(); UpdateUi();
+        active = false; if (ensureCursorOnResume) EnsureCursorVisible(); UpdateUi();
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0);
     }
     void SetActive(bool value) { if (active == value) { if (value) EnsureCursorVisible(); UpdateUi(); return; } active = value; if (value) EnsureCursorVisible(); else ResetMovementState(); PlayModeSound(value); UpdateUi(); }
