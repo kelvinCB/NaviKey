@@ -72,7 +72,7 @@ sealed class MainForm : Form
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         BackColor = Background;
-        ForeColor = Color.White;
+        ForeColor = theme.TextPrimary;
         Font = new Font("Segoe UI", 9F);
         try
         {
@@ -82,7 +82,7 @@ sealed class MainForm : Form
         catch (ArgumentException) { }
 
         var rail = new Panel { Dock = DockStyle.Left, Width = 214, BackColor = Rail, Padding = new Padding(22, 24, 18, 20) };
-        var brand = new Label { Text = "TECLADO\r\nCOMO RATÓN", Left = 22, Top = 24, Width = 170, Height = 50, ForeColor = Color.White, Font = new Font("Segoe UI", 12F, FontStyle.Bold), BackColor = Color.Transparent };
+        var brand = new Label { Text = "TECLADO\r\nCOMO RATÓN", Left = 22, Top = 24, Width = 170, Height = 50, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 12F, FontStyle.Bold), BackColor = Color.Transparent };
         var brandLine = new Panel { Left = 22, Top = 92, Width = 36, Height = 3, BackColor = Cyan };
         var navTitle = new Label { Text = "ESPACIO DE CONTROL", Left = 22, Top = 124, Width = 170, ForeColor = TextMuted, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
         rail.Controls.AddRange(new Control[] { brand, brandLine, navTitle });
@@ -100,14 +100,14 @@ sealed class MainForm : Form
         rail.Controls.Add(railFooter);
 
         var content = new Panel { Dock = DockStyle.Fill, BackColor = Background, Padding = new Padding(32, 26, 32, 24), AutoScroll = false };
-        pageHeading = new Label { Text = "Control del puntero", Left = 32, Top = 26, Width = 620, Height = 38, ForeColor = Color.White, Font = new Font("Segoe UI", 24F, FontStyle.Bold) };
+        pageHeading = new Label { Text = "Control del puntero", Left = 32, Top = 26, Width = 620, Height = 38, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 24F, FontStyle.Bold) };
         pageDescription = new Label { Text = "Un centro de control claro para moverte, hacer clic y desplazarte sin tocar el mouse.", Left = 34, Top = 68, Width = 700, Height = 24, ForeColor = TextMuted, Font = new Font("Segoe UI", 10F) };
         content.Controls.AddRange(new Control[] { pageHeading, pageDescription });
 
         var hero = CreateSurface(Surface, 32, 108, 702, 128);
         statusDot = new Panel { Left = 22, Top = 23, Width = 10, Height = 10, BackColor = Red };
         var statusLabel = new Label { Text = "ESTADO DEL SISTEMA", Left = 42, Top = 19, Width = 190, Height = 18, ForeColor = TextMuted, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
-        state = new Label { Left = 22, Top = 43, Width = 390, Height = 34, ForeColor = Color.White, Font = new Font("Segoe UI", 18F, FontStyle.Bold) };
+        state = new Label { Left = 22, Top = 43, Width = 390, Height = 34, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 18F, FontStyle.Bold) };
         modeHint = new Label { Left = 24, Top = 84, Width = 370, Height = 20, ForeColor = TextMuted, Font = new Font("Segoe UI", 9F) };
         toggle = CreatePrimaryButton("Activar modo ratón", 470, 35, 202, 56);
         toggle.Click += delegate { SetActive(!active); };
@@ -115,9 +115,9 @@ sealed class MainForm : Form
         content.Controls.Add(hero);
 
         var speedPanel = CreateSurface(Surface, 32, 254, 338, 172);
-        var speedTitle = new Label { Text = "Velocidad del puntero", Left = 20, Top = 18, Width = 280, Height = 28, ForeColor = Color.White, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
+        var speedTitle = new Label { Text = "Velocidad del puntero", Left = 20, Top = 18, Width = 280, Height = 28, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
         var speedHelp = new Label { Text = "Ajusta el paso base por pulsación.", Left = 20, Top = 49, Width = 280, Height = 20, ForeColor = TextMuted };
-        speedBox = new NumericUpDown { Left = 20, Top = 82, Width = 100, Height = 32, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 12F) };
+        speedBox = new NumericUpDown { Left = 20, Top = 82, Width = 100, Height = 32, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = theme.TextPrimary, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 12F) };
         speedBox.ValueChanged += delegate { speed = (int)speedBox.Value; UpdateSpeedReadout(); };
         speedReadout = new Label { Text = "50 px / pulsación", Left = 136, Top = 88, Width = 175, Height = 24, ForeColor = Cyan, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
         var speedKeys = new Label { Text = "Ctrl+Alt+PageUp / PageDown", Left = 20, Top = 132, Width = 295, Height = 20, ForeColor = TextMuted, Font = new Font("Segoe UI", 8.5F) };
@@ -125,7 +125,7 @@ sealed class MainForm : Form
         content.Controls.Add(speedPanel);
 
         var curvePanel = CreateSurface(Surface, 390, 254, 344, 172);
-        var curveTitle = new Label { Text = "Aceleración progresiva", Left = 20, Top = 18, Width = 290, Height = 28, ForeColor = Color.White, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
+        var curveTitle = new Label { Text = "Aceleración progresiva", Left = 20, Top = 18, Width = 290, Height = 28, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
         var curveHelp = new Label { Text = "Mantén una flecha para ganar velocidad.", Left = 20, Top = 49, Width = 295, Height = 20, ForeColor = TextMuted };
         var curveBase = new Panel { Left = 20, Top = 134, Width = 300, Height = 1, BackColor = Color.FromArgb(72, 111, 137) };
         var curve1 = new Panel { Left = 28, Top = 122, Width = 38, Height = 12, BackColor = Color.FromArgb(68, 155, 185) };
@@ -137,7 +137,7 @@ sealed class MainForm : Form
         content.Controls.Add(curvePanel);
 
         var quickPanel = CreateSurface(Surface, 32, 444, 702, 148);
-        var quickTitle = new Label { Text = "Accesos rápidos de teclado", Left = 20, Top = 17, Width = 360, Height = 26, ForeColor = Color.White, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
+        var quickTitle = new Label { Text = "Accesos rápidos de teclado", Left = 20, Top = 17, Width = 360, Height = 26, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 13F, FontStyle.Bold) };
         quickPanel.Controls.Add(quickTitle);
         quickPanel.Controls.Add(CreateShortcutCard("FLECHAS", "Mover el puntero", 20, 57, 145));
         quickPanel.Controls.Add(CreateShortcutCard("X + FLECHA", "Scroll vertical u horizontal", 180, 57, 185));
@@ -177,7 +177,7 @@ sealed class MainForm : Form
     {
         var panel = new Panel { Left = left, Top = top, Width = width, Height = 66, BackColor = SurfaceRaised, BorderStyle = BorderStyle.FixedSingle };
         var keyLabel = new Label { Text = key, Left = 10, Top = 8, Width = width - 20, Height = 18, ForeColor = Cyan, Font = new Font("Segoe UI", 8F, FontStyle.Bold) };
-        var actionLabel = new Label { Text = action, Left = 10, Top = 32, Width = width - 20, Height = 25, ForeColor = Color.White, Font = new Font("Segoe UI", 8.5F) };
+        var actionLabel = new Label { Text = action, Left = 10, Top = 32, Width = width - 20, Height = 25, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 8.5F) };
         panel.Controls.AddRange(new Control[] { keyLabel, actionLabel });
         return panel;
     }
@@ -238,29 +238,29 @@ sealed class MainForm : Form
     void BuildVelocitySection()
     {
         var panel = CreateSurface(Surface, 0, 0, 702, 178);
-        panel.Controls.Add(CreatePageLabel("Paso base", 22, 20, 250, 28, 15F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Paso base", 22, 20, 250, 28, 15F, FontStyle.Bold, theme.TextPrimary));
         panel.Controls.Add(CreatePageLabel("Cada pulsación empieza con este valor y la aceleración progresiva llega hasta el máximo.", 22, 52, 620, 24, 9F, FontStyle.Regular, TextMuted));
-        var input = new NumericUpDown { Left = 22, Top = 92, Width = 112, Height = 34, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 13F) };
+        var input = new NumericUpDown { Left = 22, Top = 92, Width = 112, Height = 34, Minimum = 1, Maximum = 200, Value = speed, Increment = 1, BackColor = SurfaceRaised, ForeColor = theme.TextPrimary, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 13F) };
         var valueLabel = CreatePageLabel(speed.ToString() + " px / pulsación", 154, 99, 230, 24, 10F, FontStyle.Bold, Cyan);
         input.ValueChanged += delegate { speed = (int)input.Value; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
         var plus = CreatePrimaryButton("Subir 5 px", 410, 88, 112, 38);
-        var minus = new Button { Text = "Bajar 5 px", Left = 534, Top = 88, Width = 112, Height = 38, FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 1, BorderColor = Color.FromArgb(85, 132, 157) }, BackColor = SurfaceRaised, ForeColor = Color.White, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
+        var minus = new Button { Text = "Bajar 5 px", Left = 534, Top = 88, Width = 112, Height = 38, FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 1, BorderColor = Color.FromArgb(85, 132, 157) }, BackColor = SurfaceRaised, ForeColor = theme.TextPrimary, Font = new Font("Segoe UI", 9F, FontStyle.Bold) };
         plus.Click += delegate { speed = Math.Min(200, speed + 5); input.Value = speed; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
         minus.Click += delegate { speed = Math.Max(1, speed - 5); input.Value = speed; valueLabel.Text = speed.ToString() + " px / pulsación"; UpdateSpeedReadout(); };
         panel.Controls.AddRange(new Control[] { input, valueLabel, plus, minus });
         sectionOverlay.Controls.Add(panel);
         var hint = CreateSurface(Footer, 0, 198, 702, 96);
         hint.Controls.Add(CreatePageLabel("Atajo rápido", 20, 18, 150, 20, 9F, FontStyle.Bold, Cyan));
-        hint.Controls.Add(CreatePageLabel("Ctrl+Alt+PageUp sube cinco píxeles. Ctrl+Alt+PageDown baja cinco.", 20, 45, 620, 24, 10F, FontStyle.Regular, Color.White));
+        hint.Controls.Add(CreatePageLabel("Ctrl+Alt+PageUp sube cinco píxeles. Ctrl+Alt+PageDown baja cinco.", 20, 45, 620, 24, 10F, FontStyle.Regular, theme.TextPrimary));
         sectionOverlay.Controls.Add(hint);
     }
     void BuildControlsSection()
     {
         var move = CreateSurface(Surface, 0, 0, 338, 180);
-        move.Controls.Add(CreatePageLabel("Mover y desplazar", 20, 18, 280, 26, 14F, FontStyle.Bold, Color.White));
+        move.Controls.Add(CreatePageLabel("Mover y desplazar", 20, 18, 280, 26, 14F, FontStyle.Bold, theme.TextPrimary));
         move.Controls.Add(CreatePageLabel("Flechas / NumPad 8 4 6 2\r\nX + flechas: scroll vertical y horizontal\r\r\nLa diagonal funciona al mantener dos flechas.", 20, 56, 300, 100, 9.5F, FontStyle.Regular, TextMuted));
         var actions = CreateSurface(Surface, 364, 0, 338, 180);
-        actions.Controls.Add(CreatePageLabel("Clic y navegación", 20, 18, 280, 26, 14F, FontStyle.Bold, Color.White));
+        actions.Controls.Add(CreatePageLabel("Clic y navegación", 20, 18, 280, 26, 14F, FontStyle.Bold, theme.TextPrimary));
         actions.Controls.Add(CreatePageLabel("Z / NumPad 1: clic izquierdo y arrastre\r\n. / NumPad 3: clic derecho\r\nB: atrás   N: adelante", 20, 56, 300, 100, 9.5F, FontStyle.Regular, TextMuted));
         sectionOverlay.Controls.AddRange(new Control[] { move, actions });
         var actionButton = CreatePrimaryButton(active ? "Desactivar modo ratón" : "Activar modo ratón", 0, 208, 240, 48);
@@ -295,28 +295,28 @@ sealed class MainForm : Form
     void BuildAccessibilitySection()
     {
         var panel = CreateSurface(Surface, 0, 0, 702, 180);
-        panel.Controls.Add(CreatePageLabel("Ajustes de accesibilidad", 22, 20, 400, 28, 15F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Ajustes de accesibilidad", 22, 20, 400, 28, 15F, FontStyle.Bold, theme.TextPrimary));
         panel.Controls.Add(CreatePageLabel("Haz que los cambios de estado sean fáciles de percibir y recuperar.", 22, 54, 620, 22, 9.5F, FontStyle.Regular, TextMuted));
-        var soundBox = new CheckBox { Text = "Sonido al activar y desactivar", Left = 22, Top = 94, Width = 310, Height = 28, Checked = soundsEnabled, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
+        var soundBox = new CheckBox { Text = "Sonido al activar y desactivar", Left = 22, Top = 94, Width = 310, Height = 28, Checked = soundsEnabled, ForeColor = theme.TextPrimary, BackColor = Surface, FlatStyle = FlatStyle.Flat };
         soundBox.CheckedChanged += delegate { soundsEnabled = soundBox.Checked; };
-        var focusBox = new CheckBox { Text = "Mantener visible el puntero al reanudar", Left = 22, Top = 132, Width = 360, Height = 28, Checked = ensureCursorOnResume, ForeColor = Color.White, BackColor = Surface, FlatStyle = FlatStyle.Flat };
+        var focusBox = new CheckBox { Text = "Mantener visible el puntero al reanudar", Left = 22, Top = 132, Width = 360, Height = 28, Checked = ensureCursorOnResume, ForeColor = theme.TextPrimary, BackColor = Surface, FlatStyle = FlatStyle.Flat };
         focusBox.CheckedChanged += delegate { ensureCursorOnResume = focusBox.Checked; if (focusBox.Checked) EnsureCursorVisible(); };
         panel.Controls.AddRange(new Control[] { soundBox, focusBox });
         sectionOverlay.Controls.Add(panel);
         var safe = CreateSurface(Footer, 0, 202, 702, 92);
         safe.Controls.Add(CreatePageLabel("Salida segura", 20, 16, 150, 20, 9F, FontStyle.Bold, Cyan));
-        safe.Controls.Add(CreatePageLabel("Retroceso, Supr y Escape siempre vuelven al teclado normal sin cerrar la aplicación.", 20, 43, 640, 24, 9.5F, FontStyle.Regular, Color.White));
+        safe.Controls.Add(CreatePageLabel("Retroceso, Supr y Escape siempre vuelven al teclado normal sin cerrar la aplicación.", 20, 43, 640, 24, 9.5F, FontStyle.Regular, theme.TextPrimary));
         sectionOverlay.Controls.Add(safe);
     }
     void BuildAboutSection()
     {
         var panel = CreateSurface(Surface, 0, 0, 702, 190);
-        panel.Controls.Add(CreatePageLabel("Teclado como ratón", 22, 22, 420, 30, 17F, FontStyle.Bold, Color.White));
+        panel.Controls.Add(CreatePageLabel("Teclado como ratón", 22, 22, 420, 30, 17F, FontStyle.Bold, theme.TextPrimary));
         panel.Controls.Add(CreatePageLabel("Control nativo para Windows\r\nVersión de producción 1.0\r\nHook de teclado de bajo nivel + eventos de mouse nativos", 22, 66, 620, 82, 10F, FontStyle.Regular, TextMuted));
         sectionOverlay.Controls.Add(panel);
         var repo = CreateSurface(Footer, 0, 212, 702, 82);
         repo.Controls.Add(CreatePageLabel("Código fuente", 20, 16, 150, 20, 9F, FontStyle.Bold, Cyan));
-        repo.Controls.Add(CreatePageLabel("github.com/kelvinCB/TecladoComoRaton", 20, 42, 640, 24, 10F, FontStyle.Regular, Color.White));
+        repo.Controls.Add(CreatePageLabel("github.com/kelvinCB/TecladoComoRaton", 20, 42, 640, 24, 10F, FontStyle.Regular, theme.TextPrimary));
         sectionOverlay.Controls.Add(repo);
     }
     void SetTheme(ThemePalette palette)
